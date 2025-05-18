@@ -9,9 +9,10 @@ public class Program {
 	public static void main(String[] args) {
 
 		SellerDao sellerDao = DaoFactory.createSellerDao();
+		// DaoFactory reterna para o sellerDao um sellerDaoJDBC com uma connection
 		
 		Seller seller = sellerDao.findById(3); 
-				//new Seller(21, "Bob", "bob@gmail.com", new Date(), 3000.0, obj);
+		// o sellerDao, que é sellerDaoJDBC dá um findById e retorna o seller
 		
 		System.out.println(seller);
 		
