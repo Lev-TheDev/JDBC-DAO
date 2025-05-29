@@ -4,6 +4,7 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -24,7 +25,41 @@ public class SellerDaoJDBC implements SellerDao {
 	
 	@Override
 	public void insert(Seller obj) {
-		// TODO Auto-generated method stub
+		PreparedStatement st = null;
+		try {
+			st = conn.prepareStatement(
+					"INSERT INTO seller "
+					+ "(Name, Email, BirthDate, BaseSalary, DepartmentId) "
+					+ "VALUES "
+					+ "(?, ?, ?, ?, ?)",
+					Statement.RETURN_GENERATED_KEYS);
+			
+			st.setString(1, obj.getName());
+			st.setString(2, obj.getEmail());
+			st.setDate(3, new java.sql.Date(obj.getBirthDate().getTime()));
+			st.setDouble(4, obj.getBaseSalary());
+			st.setInt(5, obj.getDepartment().getId());
+			
+			int rowsAffected = st.executeUpdate();
+			
+			if (rowsAffected > 0) {
+				ResultSet rs = st.getGeneratedKeys();
+				if (rs.next()) {
+					int id = rs.getInt(1);
+					obj.setId(id);
+				}
+				DB.closeResultSet(rs);
+			}
+			else {
+				throw new DbException("Unexpected error! No rows affected!");
+			}
+		}
+		catch(SQLException e) {
+			throw new DbException(e.getMessage());
+		}
+		finally {
+			DB.closeStatement(st);
+		}
 		
 	}
 
@@ -52,7 +87,24 @@ public class SellerDaoJDBC implements SellerDao {
 					+ "WHERE seller.Id = ?");
 			st.setInt(1, id);
 			rs = st.executeQuery();
+			// quando executo consulta SQL e resultado vem para o resultSet, ele aponta pra
+			// posição zero, mas só a posição 1 contém objeto; então o rs.next() faz
+			// pular para a próxima linha e avalia se tem algo lá; se não tem registro
+			// o rs.next() retorna false, pula o if e retorna null para seller
+			// ou seja, não existia nenhum vendedor nesse ID
+			// retornando true o rs.next(), ou seja, existindo uma tabela de uma linha e várias colunas
+			// vai precisar navegar nestes dados pra instanciar o department e seller
 			if (rs.next()) {
+			// Department dep = new Department();
+			// dep.setId(rs.getInt("DepartmentId"));
+			// dep.setName(rs.getString("DepName"));
+			// Seller obj = new Seller();
+			// obj.setId(rs.getInt("Id"));
+			// obj.setName(rs.getString("Name"));
+			// obj.setEmail(rs.getString("Email"));
+			// obj.setBaseSalary(rs.getDouble("BaseSalary"));
+			// obj.setBirthDate(rs.getDate("BirthDate"));
+			// obj.setDepartment(dep);
 				Department dep = instantiateDepartment(rs);
 				Seller obj = instantiateSeller(rs, dep);
 				return obj;
